@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>JAMAL SAID KAZEMBE MULTISYSTEM MANAGEMENT</title>
+<style>
+body { margin:0; padding:0; text-align:center; font-family:Arial; }
+
+.line1 { font-size:42px; font-weight:bold; color:red; margin-top:30px; }
+.line2 { font-size:33px; color:green; }
+
+.timer-container { margin-top:30px; }
+
+#timer {
+    font-size:28px;
+    font-weight:bold;
+    color:blue;
+    display:inline-block;
+    margin-right:20px;
+}
+
+button {
+    padding:10px 20px;
+    font-weight:bold;
+    border:none;
+    cursor:pointer;
+    margin:5px;
+}
+
+.green{background:green;color:white;}
+.red{background:red;color:white;}
+.blue{background:blue;color:white;}
+.orange{background:orange;color:white;}
+.purple{background:purple;color:white;}
+
+#paymentSection,
+#businessMenu,
+#transactionSection { display:none; margin-top:20px; }
+
+.locked { pointer-events:none; opacity:0.4; }
+
+input { padding:8px; margin:5px; width:200px; }
+
+table {
+    margin:20px auto;
+    border-collapse:collapse;
+    width:95%;
+}
+th,td{
+    border:1px solid black;
+    padding:8px;
+}
+th{background:#ddd;}
+</style>
+</head>
+<body>
+
+<div class="line1">JAMAL SAID KAZEMBE</div>
+<div class="line2">MULTISYSTEM MANAGEMENT</div>
+
+<div class="timer-container">
+    <span id="timer"></span>
+    <button id="payBtn" class="green">PAYMENT</button>
+    <button id="businessBtn" class="blue" onclick="openBusiness()">BUSINESS</button>
+</div>
+
+<!-- PAYMENT -->
+<div id="paymentSection">
+    <div id="inputArea"></div>
+    <div style="margin-top:20px;">
+        <button onclick="showMessage()" class="green">Submit by Message</button>
+        <button onclick="showCamera()" class="blue">Submit by Camera</button>
+        <button onclick="closePayment()" class="orange">EXIT</button>
+    </div>
+</div>
+
+<!-- BUSINESS -->
+<div id="businessMenu">
+    <button class="green" onclick="addTransaction()">ADD NEW TRANSACTION</button>
+    <button class="purple" onclick="viewMenu()">VIEW</button>
+    <button class="red" onclick="closeBusiness()">EXIT</button>
+</div>
+
+<div id="transactionSection"></div>
+
+<script>
+const timer=document.getElementById("timer");
+const payBtn=document.getElementById("payBtn");
+const businessBtn=document.getElementById("businessBtn");
+const businessMenu=document.getElementById("businessMenu");
+
+let freeTime=180;
+let waitTime=24*60*60;
+let interval;
+let systemActive=true;
+
+let transactions=[];
+let transactionData={};
+
+/* SYSTEM CONTROL */
+function activateSystem(){
+    systemActive=true;
+    businessBtn.classList.remove("locked");
+    startFreeTime();
+}
+
+function deactivateSystem(){
+    systemActive=false;
+    businessBtn.classList.add("locked");
+    businessMenu.style.display="none";
+    document.getElementById("transactionSection").style.display="none";
+    startWaitTime();
+}
+
+/* TIMER */
+function startFreeTime(){
+    clearInterval(interval);
+    interval=setInterval(function(){
+        timer.textContent="Free Time: "+freeTime+" sec";
+        freeTime--;
+        if(freeTime<0){
+            deactivateSystem();
+        }
+    },1000);
+}
+
+function startWaitTime(){
+    clearInterval(interval);
+    interval=setInterval(function(){
+        timer.textContent="Wait Time: "+waitTime+" sec";
+        waitTime--;
+    },1000);
+}
+
+activateSystem();
+
+/* PAYMENT */
+payBtn.onclick=function(){
+    document.getElementById("paymentSection").style.display="block";
+};
+
+function closePayment(){
+    document.getElementById("paymentSection").style.display="none";
+}
+
+function showMessage(){
+    document.getElementById("inputArea").innerHTML=`
+    <p><b>Paste Payment Message:</b></p>
+    <textarea style="width:300px;height:80px;"></textarea><br><br>
+    <button onclick="submitPayment()">Submit</button>`;
+}
+
+function showCamera(){
+    document.getElementById("inputArea").innerHTML=`
+    <button onclick="startCamera()">Open Camera</button><br>
+    <video id="video" autoplay style="width:300px;"></video><br>
+    <button onclick="takePhoto()">Capture</button><br>
+    <canvas id="canvas" style="width:300px;"></canvas><br><br>
+    <button onclick="submitPayment()">Submit</button>`;
+}
+
+function startCamera(){
+    navigator.mediaDevices.getUserMedia({video:true})
+    .then(stream=>{
+        document.getElementById("video").srcObject=stream;
+    }).catch(()=>{
+        alert("Camera not available.");
+    });
+}
+
+function takePhoto(){
+    const video=document.getElementById("video");
+    const canvas=document.getElementById("canvas");
+    const ctx=canvas.getContext("2d");
+    canvas.width=video.videoWidth;
+    canvas.height=video.videoHeight;
+    ctx.drawImage(video,0,0);
+}
+
+function submitPayment(){
+    alert("Payment submitted for verification.");
+    freeTime=180;
+    waitTime=24*60*60;
+    closePayment();
+    activateSystem();
+}
+
+/* BUSINESS */
+function openBusiness(){
+    if(!systemActive) return;
+    businessMenu.style.display="block";
+}
+
+function closeBusiness(){
+    businessMenu.style.display="none";
+    document.getElementById("transactionSection").style.display="none";
+}
+
+/* ADD TRANSACTION */
+function addTransaction(){
+    document.getElementById("transactionSection").style.display="block";
+    document.getElementById("transactionSection").innerHTML=`
+    <h3>Enter Transaction</h3>
+    <input type="text" id="detail" placeholder="Detail"><br>
+    <input type="number" id="amount" placeholder="Amount"><br><br>
+    <button class="green" onclick="chooseAccount('Cash')">CASH</button>
+    <button class="blue" onclick="chooseAccount('Credit')">CREDIT</button>
+    <button class="purple" onclick="chooseAccount('Bank')">BANK</button><br><br>
+    <button class="orange" onclick="closeBusiness()">EXIT</button>`;
+}
+
+function chooseAccount(type){
+    let today=new Date();
+    let date=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,'0')+"-"+String(today.getDate()).padStart(2,'0');
+    let detail=document.getElementById("detail").value;
+    let amount=document.getElementById("amount").value;
+
+    if(!detail||!amount){ alert("Enter detail and amount"); return; }
+
+    transactionData={date,detail,amount,account:type};
+
+    document.getElementById("transactionSection").innerHTML=`
+    <h3>Money Direction</h3>
+    <button class="green" onclick="saveTransaction('IN')">IN</button>
+    <button class="red" onclick="saveTransaction('OUT')">OUT</button>`;
+}
+
+function saveTransaction(direction){
+    transactionData.direction=direction;
+    transactions.push(transactionData);
+    alert("Transaction Recorded Successfully");
+    closeBusiness();
+}
+
+/* VIEW */
+function viewMenu(){
+    document.getElementById("transactionSection").style.display="block";
+    document.getElementById("transactionSection").innerHTML=`
+    <h3>VIEW MENU</h3>
+    <button class="green" onclick="viewList()">LIST</button>
+    <button class="red" onclick="closeBusiness()">EXIT</button>`;
+}
+
+function viewList(){
+    if(transactions.length===0){
+        document.getElementById("transactionSection").innerHTML=`
+        <h3>No transactions recorded</h3>
+        <button class="orange" onclick="viewMenu()">BACK</button>`;
+        return;
+    }
+
+    let table=`<h3>Transaction List</h3>
+    <table>
+    <tr>
+    <th>S/N</th>
+    <th>Date</th>
+    <th>Detail</th>
+    <th>Amount</th>
+    <th>Account</th>
+    <th>IN/OUT</th>
+    </tr>`;
+
+    transactions.forEach((t,i)=>{
+        table+=`<tr>
+        <td>${i+1}</td>
+        <td>${t.date}</td>
+        <td>${t.detail}</td>
+        <td>${t.amount}</td>
+        <td>${t.account}</td>
+        <td>${t.direction}</td>
+        </tr>`;
+    });
+
+    table+=`</table>
+    <button class="orange" onclick="viewMenu()">BACK</button>`;
+
+    document.getElementById("transactionSection").innerHTML=table;
+}
+</script>
+
+</body>
+</html>
